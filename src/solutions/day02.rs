@@ -96,7 +96,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn part2_1() {
+    async fn part1_2() {
         let response = router()
             .oneshot(
                 Request::builder()
@@ -114,7 +114,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn part3_1() {
+    async fn part2_1() {
         let response = router()
             .oneshot(
                 Request::builder()
@@ -132,7 +132,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn part3_2() {
+    async fn part2_2() {
         let response = router()
             .oneshot(
                 Request::builder()
@@ -147,5 +147,41 @@ mod tests {
 
         let body = collect_body(response).await;
         assert_eq!(body, "255.0.255.33")
+    }
+
+    #[tokio::test]
+    async fn part3_1() {
+        let response = router()
+            .oneshot(
+                Request::builder()
+                    .uri("/2/v6/dest?from=fe80::1&key=5:6:7::3333")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = collect_body(response).await;
+        assert_eq!(body, "fe85:6:7::3332")
+    }
+
+    #[tokio::test]
+    async fn part3_2() {
+        let response = router()
+            .oneshot(
+                Request::builder()
+                    .uri("/2/v6/key?from=aaaa::aaaa&to=5555:ffff:c:0:0:c:1234:5555")
+                    .body(Body::empty())
+                    .unwrap(),
+            )
+            .await
+            .unwrap();
+
+        assert_eq!(response.status(), StatusCode::OK);
+
+        let body = collect_body(response).await;
+        assert_eq!(body, "ffff:ffff:c::c:1234:ffff")
     }
 }
