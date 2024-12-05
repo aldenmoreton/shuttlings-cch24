@@ -1,43 +1,33 @@
-use std::net::Ipv6Addr;
+use std::net::{Ipv4Addr, Ipv6Addr};
 
 use axum::extract::Query;
 use itertools::Itertools;
 
 #[derive(serde::Deserialize)]
 pub struct P1Query {
-    from: String,
-    key: String,
+    from: Ipv4Addr,
+    key: Ipv4Addr,
 }
 
-pub async fn p1(Query(params): Query<P1Query>) -> String {
-    params
-        .from
-        .split(".")
-        .zip(params.key.split("."))
-        .map(|(num1, num2)| {
-            num1.parse::<u8>()
-                .unwrap()
-                .wrapping_add(num2.parse().unwrap())
-        })
+pub async fn p1(Query(P1Query { from, key }): Query<P1Query>) -> String {
+    from.octets()
+        .into_iter()
+        .zip(key.octets().into_iter())
+        .map(|(from, key)| from.wrapping_add(key).to_string())
         .join(".")
 }
 
 #[derive(serde::Deserialize)]
 pub struct P2Query {
-    from: String,
-    to: String,
+    from: Ipv4Addr,
+    to: Ipv4Addr,
 }
 
-pub async fn p2(Query(params): Query<P2Query>) -> String {
-    params
-        .from
-        .split(".")
-        .zip(params.to.split("."))
-        .map(|(from, to)| {
-            to.parse::<u8>()
-                .unwrap()
-                .wrapping_sub(from.parse().unwrap())
-        })
+pub async fn p2(Query(P2Query { from, to }): Query<P2Query>) -> String {
+    from.octets()
+        .into_iter()
+        .zip(to.octets().into_iter())
+        .map(|(from, to)| to.wrapping_sub(from).to_string())
         .join(".")
 }
 
@@ -53,17 +43,23 @@ fn p3_converter(left: Ipv6Addr, right: Ipv6Addr) -> Ipv6Addr {
     Ipv6Addr::from(combined)
 }
 
-pub async fn p3a(Query(params): Query<P1Query>) -> String {
-    let from = params.from.parse::<Ipv6Addr>().unwrap();
-    let key = params.key.parse::<Ipv6Addr>().unwrap();
+#[derive(serde::Deserialize)]
+pub struct P3AQuery {
+    from: Ipv6Addr,
+    key: Ipv6Addr,
+}
 
+pub async fn p3a(Query(P3AQuery { from, key }): Query<P3AQuery>) -> String {
     p3_converter(from, key).to_string()
 }
 
-pub async fn p3b(Query(params): Query<P2Query>) -> String {
-    let from = params.from.parse::<Ipv6Addr>().unwrap();
-    let to = params.to.parse::<Ipv6Addr>().unwrap();
+#[derive(serde::Deserialize)]
+pub struct P3BQuery {
+    from: Ipv6Addr,
+    to: Ipv6Addr,
+}
 
+pub async fn p3b(Query(P3BQuery { from, to }): Query<P3BQuery>) -> String {
     p3_converter(from, to).to_string()
 }
 
