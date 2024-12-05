@@ -56,14 +56,11 @@ pub async fn p1(headers: HeaderMap, body: String) -> impl IntoResponse {
         return StatusCode::NO_CONTENT.into_response();
     }
 
-    Itertools::intersperse(
-        orders
-            .into_iter()
-            .map(|order| format!("{}: {}", order.item, order.quantity)),
-        "\n".into(),
-    )
-    .collect::<String>()
-    .into_response()
+    orders
+        .into_iter()
+        .map(|order| format!("{}: {}", order.item, order.quantity))
+        .join("\n")
+        .into_response()
 }
 
 #[cfg(test)]
