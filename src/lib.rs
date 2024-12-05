@@ -1,8 +1,12 @@
-use axum::{routing::get, Router};
+use axum::{
+    routing::{get, post},
+    Router,
+};
 
 pub mod solutions {
     pub mod day01;
     pub mod day02;
+    pub mod day05;
 }
 
 use solutions::*;
@@ -21,6 +25,7 @@ pub fn router() -> Router {
                 .route("/2/v6/dest", get(day02::p3a))
                 .route("/2/v6/key", get(day02::p3b)),
         )
+        .merge(Router::new().route("/5/manifest", post(day05::p1)))
 }
 
 #[cfg(test)]
