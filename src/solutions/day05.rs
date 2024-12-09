@@ -16,7 +16,7 @@ struct Order {
     quantity: u32,
 }
 
-pub async fn p1(headers: HeaderMap, body: String) -> impl IntoResponse {
+pub async fn manifest(headers: HeaderMap, body: String) -> impl IntoResponse {
     let Some(package) = match headers
         .get("Content-Type")
         .and_then(|header| header.to_str().ok())
@@ -30,14 +30,14 @@ pub async fn p1(headers: HeaderMap, body: String) -> impl IntoResponse {
         return (StatusCode::BAD_REQUEST, "Invalid manifest").into_response();
     };
 
-    let contains_magic = package
+    if !package
         .keywords
         .and_then(|keys| {
             keys.as_local()
                 .map(|keys| keys.iter().any(|key| key == "Christmas 2024"))
         })
-        .unwrap_or(false);
-    if !contains_magic {
+        .unwrap_or(false)
+    {
         return (StatusCode::BAD_REQUEST, "Magic keyword not provided").into_response();
     }
 
