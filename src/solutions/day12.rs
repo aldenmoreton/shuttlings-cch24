@@ -2,7 +2,11 @@ use std::{fmt::Display, sync::Arc};
 
 use axum::{extract::Path, http::StatusCode, response::IntoResponse, Extension};
 use itertools::Itertools;
+use rand::{Rng, SeedableRng};
 use tokio::sync::RwLock;
+
+type BoardLock = Extension<Arc<RwLock<Board>>>;
+type RandLock = Extension<Arc<RwLock<rand::rngs::StdRng>>>;
 
 #[derive(Debug, Clone, Default, PartialEq)]
 pub enum Cell {
@@ -115,16 +119,16 @@ impl Board {
     }
 }
 
-type BoardLock = Extension<Arc<RwLock<Board>>>;
-
 pub async fn board(Extension(board): BoardLock) -> String {
     let board = board.read().await;
-    println!("Printing board");
     board.to_string()
 }
 
-pub async fn reset(Extension(board): BoardLock) -> String {
-    println!("reset");
+pub async fn reset(Extension(board): BoardLock, Extension(random_nums): RandLock) -> String {
+    let mut random_nums = random_nums.write().await;
+    *random_nums = rand::rngs::StdRng::seed_from_u64(2024);
+    drop(random_nums);
+
     let mut board = board.write().await;
     *board = Default::default();
     board.to_string()
@@ -134,7 +138,6 @@ pub async fn place(
     Path((team, column)): Path<(String, usize)>,
     Extension(board): BoardLock,
 ) -> impl IntoResponse {
-    println!("Placing: {column}");
     if !matches!(column, 1..=4) {
         return StatusCode::BAD_REQUEST.into_response();
     }
@@ -155,10 +158,34 @@ pub async fn place(
 
     if let Some(row) = board.insert(team_cell, column) {
         let new_status = board.check(row, column);
-        println!("new status: {new_status:?}");
         board.1 = new_status;
         board.to_string().into_response()
     } else {
         (StatusCode::SERVICE_UNAVAILABLE, board.to_string()).into_response()
     }
+}
+
+pub async fn random_board(Extension(random_nums): RandLock) -> String {
+    let mut random_nums = random_nums.write().await;
+
+    let mut board = Board::default();
+    let mut winner = Cell::Empty;
+    for i in 0..4 {
+        for j in 0..4 {
+            board.0[i][j] = if random_nums.gen::<bool>() {
+                Cell::Cookie
+            } else {
+                Cell::Milk
+            };
+            match board.check(i, j) {
+                Status::InProgress => (),
+                Status::Winner(curr_winner) => {
+                    winner = curr_winner;
+                }
+            }
+        }
+    }
+
+    board.1 = Status::Winner(winner);
+    board.to_string()
 }

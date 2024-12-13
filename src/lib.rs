@@ -17,6 +17,7 @@ pub mod solutions {
     pub mod day12;
 }
 
+use rand::SeedableRng;
 use solutions::*;
 use tokio::sync::RwLock;
 
@@ -53,7 +54,11 @@ pub fn router() -> Router {
                 .route("/board", get(day12::board))
                 .route("/reset", post(day12::reset))
                 .route("/place/:team/:column", post(day12::place))
-                .layer(Extension(Arc::new(RwLock::new(day12::Board::default())))),
+                .route("/random-board", get(day12::random_board))
+                .layer(Extension(Arc::new(RwLock::new(day12::Board::default()))))
+                .layer(Extension(Arc::new(RwLock::new(
+                    rand::rngs::StdRng::seed_from_u64(2024),
+                )))),
         )
 }
 
