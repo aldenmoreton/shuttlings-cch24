@@ -14,9 +14,11 @@ pub mod solutions {
     pub mod day02;
     pub mod day05;
     pub mod day09;
+    pub mod day12;
 }
 
 use solutions::*;
+use tokio::sync::RwLock;
 
 pub fn router() -> Router {
     Router::new()
@@ -44,6 +46,14 @@ pub fn router() -> Router {
                         .interval(Duration::from_millis(1_000))
                         .build(),
                 )))),
+        )
+        .nest(
+            "/12",
+            Router::new()
+                .route("/board", get(day12::board))
+                .route("/reset", post(day12::reset))
+                .route("/place/:team/:column", post(day12::place))
+                .layer(Extension(Arc::new(RwLock::new(day12::Board::default())))),
         )
 }
 
