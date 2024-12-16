@@ -15,6 +15,7 @@ pub mod solutions {
     pub mod day05;
     pub mod day09;
     pub mod day12;
+    pub mod day16;
 }
 
 use rand::SeedableRng;
@@ -59,6 +60,12 @@ pub fn router() -> Router {
                 .layer(Extension(Arc::new(RwLock::new(
                     rand::rngs::StdRng::seed_from_u64(2024),
                 )))),
+        )
+        .nest(
+            "/16",
+            Router::new()
+                .route("/wrap", post(day16::wrap))
+                .route("/unwrap", get(day16::unwrap)),
         )
 }
 
