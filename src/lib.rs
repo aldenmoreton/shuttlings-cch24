@@ -65,7 +65,8 @@ pub fn router() -> Router {
             "/16",
             Router::new()
                 .route("/wrap", post(day16::wrap))
-                .route("/unwrap", get(day16::unwrap)),
+                .route("/unwrap", get(day16::unwrap))
+                .route("/decode", post(day16::decode)),
         )
 }
 
