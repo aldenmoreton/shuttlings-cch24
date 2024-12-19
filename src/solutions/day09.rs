@@ -1,7 +1,4 @@
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 
 use axum::{
     http::{HeaderMap, StatusCode},
@@ -10,6 +7,7 @@ use axum::{
 };
 use leaky_bucket::RateLimiter;
 use serde_json::json;
+use tokio::sync::RwLock;
 
 #[derive(Debug, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -21,11 +19,11 @@ pub enum MilkMeasure {
 }
 
 pub async fn milk(
-    Extension(milk_bucket): Extension<Arc<Mutex<RateLimiter>>>,
+    Extension(milk_bucket): Extension<Arc<RwLock<RateLimiter>>>,
     headers: HeaderMap,
     body: Option<String>,
 ) -> impl IntoResponse {
-    let bucket = milk_bucket.lock().unwrap();
+    let bucket = milk_bucket.read().await;
     let aquired = bucket.try_acquire(1);
     drop(bucket);
 
@@ -59,8 +57,8 @@ pub async fn milk(
     .into_response()
 }
 
-pub async fn refill(Extension(milk_bucket): Extension<Arc<Mutex<RateLimiter>>>) {
-    let mut bucket = milk_bucket.lock().unwrap();
+pub async fn refill(Extension(milk_bucket): Extension<Arc<RwLock<RateLimiter>>>) {
+    let mut bucket = milk_bucket.write().await;
     *bucket = RateLimiter::builder()
         .initial(5)
         .max(5)

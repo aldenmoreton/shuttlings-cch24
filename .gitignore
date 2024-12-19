@@ -2,3 +2,4 @@
 .shuttle*
 Secrets*.toml
 day16_santa_public_key.pem
+.env

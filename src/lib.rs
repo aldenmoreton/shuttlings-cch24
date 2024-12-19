@@ -1,11 +1,8 @@
 #![deny(clippy::unwrap_used)]
-use std::{
-    sync::{Arc, Mutex},
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
 
 use axum::{
-    routing::{get, post},
+    routing::{delete, get, post, put},
     Extension, Router,
 };
 
@@ -16,32 +13,33 @@ pub mod solutions {
     pub mod day09;
     pub mod day12;
     pub mod day16;
+    pub mod day19;
 }
 
-use rand::SeedableRng;
 use solutions::*;
-use tokio::sync::RwLock;
 
-pub fn router() -> Router {
+pub fn router() -> Router<sqlx::PgPool> {
     Router::new()
         .merge(
             Router::new()
                 .route("/", get(day01::p1))
                 .route("/-1/seek", get(day01::p2)),
         )
-        .merge(
+        .nest(
+            "/2",
             Router::new()
-                .route("/2/dest", get(day02::p1))
-                .route("/2/key", get(day02::p2))
-                .route("/2/v6/dest", get(day02::p3a))
-                .route("/2/v6/key", get(day02::p3b)),
+                .route("/dest", get(day02::p1))
+                .route("/key", get(day02::p2))
+                .route("/v6/dest", get(day02::p3a))
+                .route("/v6/key", get(day02::p3b)),
         )
         .route("/5/manifest", post(day05::manifest))
-        .merge(
+        .nest(
+            "/9",
             Router::new()
-                .route("/9/milk", post(day09::milk))
-                .route("/9/refill", post(day09::refill))
-                .layer(Extension(Arc::new(Mutex::new(
+                .route("/milk", post(day09::milk))
+                .route("/refill", post(day09::refill))
+                .layer(Extension(Arc::new(tokio::sync::RwLock::new(
                     leaky_bucket::RateLimiter::builder()
                         .initial(5)
                         .max(5)
@@ -56,9 +54,11 @@ pub fn router() -> Router {
                 .route("/reset", post(day12::reset))
                 .route("/place/:team/:column", post(day12::place))
                 .route("/random-board", get(day12::random_board))
-                .layer(Extension(Arc::new(RwLock::new(day12::Board::default()))))
-                .layer(Extension(Arc::new(RwLock::new(
-                    rand::rngs::StdRng::seed_from_u64(2024),
+                .layer(Extension(Arc::new(tokio::sync::RwLock::new(
+                    day12::Board::default(),
+                ))))
+                .layer(Extension(Arc::new(tokio::sync::RwLock::new(
+                    <rand::rngs::StdRng as rand::SeedableRng>::seed_from_u64(2024),
                 )))),
         )
         .nest(
@@ -67,6 +67,16 @@ pub fn router() -> Router {
                 .route("/wrap", post(day16::wrap))
                 .route("/unwrap", get(day16::unwrap))
                 .route("/decode", post(day16::decode)),
+        )
+        .nest(
+            "/19",
+            Router::new()
+                .route("/reset", post(day19::reset))
+                .route("/cite/:id", get(day19::cite))
+                .route("/remove/:id", delete(day19::remove))
+                .route("/undo/:id", put(day19::undo))
+                .route("/draft", post(day19::draft))
+                .route("/list", get(day19::list)),
         )
 }
 
