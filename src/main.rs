@@ -7,7 +7,7 @@ async fn main(#[shuttle_shared_db::Postgres] pool: sqlx::PgPool) -> shuttle_axum
         .await
         .expect("Could not migrate DB");
 
-    let router = router().with_state(pool);
+    let router = router().layer(axum::Extension(pool));
 
     Ok(router.into())
 }

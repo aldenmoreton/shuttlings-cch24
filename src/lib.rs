@@ -18,7 +18,7 @@ pub mod solutions {
 
 use solutions::*;
 
-pub fn router() -> Router<sqlx::PgPool> {
+pub fn router() -> Router {
     Router::new()
         .merge(
             Router::new()

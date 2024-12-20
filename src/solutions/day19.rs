@@ -1,8 +1,8 @@
 use axum::{
-    extract::{Path, Query, State},
+    extract::{Path, Query},
     http::StatusCode,
     response::IntoResponse,
-    Json,
+    Extension, Json,
 };
 use sqlx::{
     types::{
@@ -21,14 +21,17 @@ pub struct Quote {
     version: i32,
 }
 
-pub async fn reset(State(pool): State<PgPool>) {
+pub async fn reset(Extension(pool): Extension<PgPool>) {
     sqlx::query!("TRUNCATE TABLE quotes")
         .execute(&pool)
         .await
         .unwrap();
 }
 
-pub async fn cite(Path(id): Path<uuid::Uuid>, State(pool): State<PgPool>) -> impl IntoResponse {
+pub async fn cite(
+    Extension(pool): Extension<PgPool>,
+    Path(id): Path<uuid::Uuid>,
+) -> impl IntoResponse {
     let res = sqlx::query_as!(Quote, "SELECT * FROM quotes WHERE id = $1", id)
         .fetch_optional(&pool)
         .await
@@ -41,7 +44,10 @@ pub async fn cite(Path(id): Path<uuid::Uuid>, State(pool): State<PgPool>) -> imp
     }
 }
 
-pub async fn remove(Path(id): Path<uuid::Uuid>, State(pool): State<PgPool>) -> impl IntoResponse {
+pub async fn remove(
+    Extension(pool): Extension<PgPool>,
+    Path(id): Path<uuid::Uuid>,
+) -> impl IntoResponse {
     let res = sqlx::query_as!(Quote, "DELETE FROM quotes WHERE id = $1 RETURNING *", id)
         .fetch_optional(&pool)
         .await
@@ -61,7 +67,7 @@ pub struct NewQuote {
 }
 
 pub async fn undo(
-    State(pool): State<PgPool>,
+    Extension(pool): Extension<PgPool>,
     Path(id): Path<uuid::Uuid>,
     Json(NewQuote { author, quote }): Json<NewQuote>,
 ) -> impl IntoResponse {
@@ -90,7 +96,7 @@ pub async fn undo(
 }
 
 pub async fn draft(
-    State(pool): State<PgPool>,
+    Extension(pool): Extension<PgPool>,
     Json(NewQuote { author, quote }): Json<NewQuote>,
 ) -> (StatusCode, Json<Quote>) {
     let new_quote = sqlx::query_as!(
@@ -114,7 +120,7 @@ pub struct Pagination {
 }
 
 pub async fn list(
-    State(pool): State<PgPool>,
+    Extension(pool): Extension<PgPool>,
     Query(Pagination { token }): Query<Pagination>,
 ) -> impl IntoResponse {
     let page_num = token.unwrap_or(1);
